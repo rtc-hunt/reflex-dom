@@ -52,6 +52,8 @@ import Control.Monad.State.Strict
 import Control.Monad.Trans.Control
 import Data.Default
 import Data.Functor.Misc
+import Data.IntMap (IntMap)
+import qualified Data.IntMap as IntMap
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe
@@ -556,6 +558,29 @@ instance (DomBuilder t m, PerformEvent t m, MonadFix m, MonadHold t m) => DomBui
 instance (MountableDomBuilder t m, PerformEvent t m, MonadFix m, MonadHold t m) => MountableDomBuilder t (PostBuildT t m) where
   type DomFragment (PostBuildT t m) = DomFragment m
   buildDomFragment = liftThrough buildDomFragment
+  mountDomFragment f0 f' = lift $ mountDomFragment f0 f'
+
+instance (MountableDomBuilder t m, PerformEvent t m, MonadFix m, MonadHold t m) => MountableDomBuilder t (RequesterT t request response m) where
+  type DomFragment (RequesterT t request response m) = DomFragment m
+  buildDomFragment x = mdo
+    let fannedResponses = fanInt responses
+        withFannedResponses :: forall m' a. Monad m' => RequesterT t request response m' a -> Int -> m' (a, Event t (IntMap (RequesterData request)))
+        withFannedResponses w selector = do
+          (x, e) <- runRequesterT w (selectInt fannedResponses selector)
+          pure (x, fmapCheap (IntMap.singleton selector) e)
+    (frag, (result, requestsE)) <- lift $ buildDomFragment (withFannedResponses x 0)
+    responses <- fmap (fmapCheap unMultiEntry) $ requesting' $ fmapCheap multiEntry $ requestsE
+    return (frag, result)
+  mountDomFragment f0 f' = lift $ mountDomFragment f0 f'
+
+-- instance (DomBuilder t m, MonadFix m, MonadHold t m, Group q, Query q, Additive q, Eq q) => DomBuilder t (QueryT t q m) where
+instance (MountableDomBuilder t m, MonadFix m, MonadHold t m, Query q, Group q, Additive q, Eq q) => MountableDomBuilder t (QueryT t q m) where
+  type DomFragment (QueryT t q m) = DomFragment m
+  buildDomFragment x = mdo
+    result <- queryDyn query
+    (frag, (a, inc)) <- lift $ buildDomFragment $ runQueryT x result   
+    let query = incrementalToDynamic inc
+    pure (frag, a)
   mountDomFragment f0 f' = lift $ mountDomFragment f0 f'
 
 instance (DomBuilder t m, Monoid w, MonadHold t m, MonadFix m) => DomBuilder t (DynamicWriterT t w m) where
