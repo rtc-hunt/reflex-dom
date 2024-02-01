@@ -566,8 +566,8 @@ instance (MountableDomBuilder t m, PerformEvent t m, MonadFix m, MonadHold t m) 
     let fannedResponses = fanInt responses
         withFannedResponses :: forall m' a. Monad m' => RequesterT t request response m' a -> Int -> m' (a, Event t (IntMap (RequesterData request)))
         withFannedResponses w selector = do
-          (x, e) <- runRequesterT w (selectInt fannedResponses selector)
-          pure (x, fmapCheap (IntMap.singleton selector) e)
+          (a, e) <- runRequesterT w (selectInt fannedResponses selector)
+          pure (a, fmapCheap (IntMap.singleton selector) e)
     (frag, (result, requestsE)) <- lift $ buildDomFragment (withFannedResponses x 0)
     responses <- fmap (fmapCheap unMultiEntry) $ requesting' $ fmapCheap multiEntry $ requestsE
     return (frag, result)

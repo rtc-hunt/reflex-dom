@@ -253,6 +253,13 @@ hoistDMapWithKeyWithAdjust base mapPatch f dm0 dm' = do
       sample o
   return (result0, result')
 
+instance SupportsStaticDomBuilder t m => MountableDomBuilder t (StaticDomBuilderT t m) where
+  type DomFragment (StaticDomBuilderT t m) = Behavior t Builder
+  buildDomFragment a = do
+    e <- (StaticDomBuilderT ask)
+    fmap (\(a,b) -> (b,a)) $ lift $ runStaticDomBuilderT a e
+  mountDomFragment a e = StaticDomBuilderT $ modify . (:) =<< switcher a e
+
 instance SupportsStaticDomBuilder t m => NotReady t (StaticDomBuilderT t m) where
   notReadyUntil _ = pure ()
   notReady = pure ()
