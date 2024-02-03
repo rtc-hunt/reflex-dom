@@ -685,6 +685,11 @@ instance Reflex t => HasDomEvent t (TextAreaElement EventResult d t) en where
 instance DomBuilder t m => DomBuilder t (ReaderT r m) where
   type DomBuilderSpace (ReaderT r m) = DomBuilderSpace m
 
+instance MountableDomBuilder t m => MountableDomBuilder t (ReaderT r m) where
+  type DomFragment (ReaderT r m) = DomFragment m
+  buildDomFragment = liftThrough buildDomFragment
+  mountDomFragment f0 f' = lift $ mountDomFragment f0 f'
+
 type LiftDomBuilder t f m =
   ( Reflex t
   , MonadTransControlStateless f

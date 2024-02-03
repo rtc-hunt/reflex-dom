@@ -100,6 +100,8 @@ instance DomBuilder t m => DomBuilder t (HydratableT m) where
           }
     lift $ selectElement cfg' $ runHydratableT child
 
+deriving instance MountableDomBuilder t m => MountableDomBuilder t (HydratableT m)
+
 instance HasDocument m => HasDocument (HydratableT m)
 
 instance HasJSContext m => HasJSContext (HydratableT m) where

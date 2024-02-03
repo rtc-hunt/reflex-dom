@@ -1442,6 +1442,11 @@ instance SupportsHydrationDomBuilder t m => DomBuilder t (HydrationDomBuilderT H
   placeRawElement () = pure ()
   wrapRawElement () _cfg = pure $ Element (EventSelector $ const never) ()
 
+instance SupportsHydrationDomBuilder t m => MountableDomBuilder t (HydrationDomBuilderT HydrationDomSpace t m) where
+  type DomFragment (HydrationDomBuilderT HydrationDomSpace t m) = ()
+  buildDomFragment w = (,) () <$> w
+  mountDomFragment t a = pure ()
+
 instance SupportsHydrationDomBuilder t m => DomBuilder t (HydrationDomBuilderT GhcjsDomSpace t m) where
   type DomBuilderSpace (HydrationDomBuilderT GhcjsDomSpace t m) = GhcjsDomSpace
   {-# INLINABLE element #-}
